@@ -47,19 +47,31 @@ const App = () => {
       return;
     }
 
-    if (story) {
-      const utterance = new SpeechSynthesisUtterance(story);
-      // Find a Hindi voice
-      const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(voice => voice.lang === 'hi-IN');
+    if (recipe) {
+      const text = recipe
+        .replace(/[*_#`]/g, '') // remove markdown symbols
+        .replace(/\d+\./g, '')  // remove step numbers like "1."
+        .trim();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Load voices safely
+      let voices = window.speechSynthesis.getVoices();
+      if (!voices.length) {
+        window.speechSynthesis.onvoiceschanged = () => handleSpeak();
+        return;
+      }
+
+      // Find Hindi voice
+      const hindiVoice = voices.find(v => v.lang === 'hi-IN' || v.lang.startsWith('hi'));
       if (hindiVoice) {
         utterance.voice = hindiVoice;
       } else {
-        console.warn("Hindi voice not found, using default.");
+        console.warn("⚠️ Hindi voice not found, using default voice.");
       }
 
-      utterance.pitch = 1.2;
-      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      utterance.rate = 0.95;
       utterance.volume = 1;
       utterance.onend = () => setIsSpeaking(false);
 
@@ -68,6 +80,7 @@ const App = () => {
       setIsSpeaking(true);
     }
   };
+
 
   const startRecognition = () => {
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
